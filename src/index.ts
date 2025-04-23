@@ -339,49 +339,76 @@ server.tool(
   }
 );
 
+function log(...args: any[]) {
+  console.error(new Date().toISOString(), ...args);
+}
+
 async function main() {
+  log('Starting Hiworks Mail MCP Server...');
+  
   const transport = new StdioServerTransport();
-  const server = new McpServer({
+  log('Created StdioServerTransport');
+  
+  const serverConfig = {
     name: 'hiworks-mail-mcp',
-    version: '1.0.2',
+    version: '1.0.3',
     capabilities: {
       resources: {},
       tools: {},
     }
-  });
+  };
+  
+  const server = new McpServer(serverConfig);
+  log('Created McpServer instance with config:', serverConfig);
 
   // 프로세스 종료 시그널 처리
   process.on('SIGTERM', () => {
-    console.error('Received SIGTERM signal');
+    log('Received SIGTERM signal');
     process.exit(0);
   });
 
   process.on('SIGINT', () => {
-    console.error('Received SIGINT signal');
+    log('Received SIGINT signal');
     process.exit(0);
   });
 
   // 예기치 않은 에러 처리
   process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
+    log('Uncaught Exception:', error);
     process.exit(1);
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    log('Unhandled Rejection at:', promise, 'reason:', reason);
     process.exit(1);
   });
 
+  // stdio 스트림 에러 처리
+  process.stdin.on('error', (error) => {
+    log('stdin error:', error);
+  });
+
+  process.stdout.on('error', (error) => {
+    log('stdout error:', error);
+  });
+
+  process.stderr.on('error', (error) => {
+    log('stderr error:', error);
+  });
+
   try {
+    log('Attempting to connect server to transport...');
     await server.connect(transport);
-    console.error("Hiworks Mail MCP Server running on stdio");
+    log('Successfully connected server to transport');
+    log('Hiworks Mail MCP Server running on stdio');
   } catch (error) {
-    console.error("Failed to start MCP server:", error);
+    log('Failed to start MCP server:', error);
     process.exit(1);
   }
 }
 
+log('Starting main function...');
 main().catch((error) => {
-  console.error("Fatal error in main():", error);
+  log('Fatal error in main():', error);
   process.exit(1);
 });

@@ -29,7 +29,10 @@ function formatDate(date: Date): string {
 
 // 로깅 함수
 function log(...args: any[]) {
-  console.error(new Date().toISOString(), ...args);
+  // 개발 모드에서만 로그 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.error(new Date().toISOString(), ...args);
+  }
 }
 
 // POP3 클라이언트 생성 함수
@@ -42,7 +45,6 @@ async function connectPOP3(username: string, password: string): Promise<Pop3Comm
     tls: config.pop3.ssl,
     timeout: 60000
   };
-  log('Creating POP3 client with config:', pop3Config);
   
   const client = new Pop3Command(pop3Config);
   return client;
@@ -151,39 +153,17 @@ server.tool(
   searchEmailSchema,
   async ({ username, password, query, limit = 10 }) => {
     try {
-      log('POP3 Config:', config.pop3);
       const client = await connectPOP3(username, password);
       
       // STAT으로 메일박스 상태 확인
       const stat = await client.STAT();
-      log(`\nMailbox status (STAT):
-  - STAT messages: ${stat[0]}
-  - STAT total size: ${stat[1]} bytes`);
-
+      
       // LIST로 각 메일의 크기 확인 (메시지 번호는 1부터 시작)
       const messageList = await client.LIST();
       const totalMessages = messageList.length;  // LIST 결과로 전체 메시지 수 계산
-      log('\nMessage list (LIST):');
-      log(`  - Total messages from LIST: ${totalMessages}`);
-      messageList.forEach(([num, size], index) => {
-        if (index < 5 || index > messageList.length - 6) {
-          log(`  - Message ${num}: ${size} bytes`);
-        } else if (index === 5) {
-          log('  ...');
-        }
-      });
 
       // UIDL로 메일의 고유 ID 확인
       const uidList = await client.UIDL();
-      log('\nMessage UIDs (UIDL):');
-      log(`  - Total UIDs: ${uidList.length}`);
-      uidList.forEach(([num, uid], index) => {
-        if (index < 5 || index > uidList.length - 6) {
-          log(`  - Message ${num}: ${uid}`);
-        } else if (index === 5) {
-          log('  ...');
-        }
-      });
 
       const emails = [];
       const messagesToFetch = [];
@@ -196,26 +176,13 @@ server.tool(
         }
       }
 
-      log('\nFetching messages:', messagesToFetch.join(', '));
-
       // 선택된 메일들의 정보 가져오기
       for (const msgNum of messagesToFetch) {
         try {
-          log(`\nProcessing message ${msgNum}:`);
           // 먼저 TOP으로 헤더만 가져오기
           const messageTop = await client.TOP(msgNum, 0);
           const parsed = await simpleParser(messageTop);
           
-          // 메시지 정보 로깅
-          const uid = uidList.find(([num]) => Number(num) === msgNum)?.[1] || '';
-          const size = messageList.find(([num]) => Number(num) === msgNum)?.[1] || '0';
-          log(`  - UID: ${uid}
-  - Size: ${size} bytes
-  - Date: ${parsed.date}
-  - Subject: ${parsed.subject}
-  - From: ${Array.isArray(parsed.from) ? parsed.from[0]?.text : parsed.from?.text}
-  - To: ${Array.isArray(parsed.to) ? parsed.to[0]?.text : parsed.to?.text}`);
-
           emails.push({
             id: parsed.messageId || String(msgNum),
             subject: parsed.subject || '(제목 없음)',
@@ -224,7 +191,9 @@ server.tool(
             date: parsed.date ? formatDate(parsed.date) : new Date().toISOString()
           });
         } catch (err) {
-          log(`Error processing message ${msgNum}:`, err);
+          if (process.env.NODE_ENV === 'development') {
+            log(`Error processing message ${msgNum}:`, err);
+          }
         }
       }
 
@@ -387,53 +356,70 @@ server.tool(
 
 // 메인 함수
 async function main() {
-  log('Starting Hiworks Mail MCP Server...');
+  if (process.env.NODE_ENV === 'development') {
+    log('Starting Hiworks Mail MCP Server...');
+  }
   
   const transport = new StdioServerTransport();
-  log('Created StdioServerTransport');
   
   // 프로세스 종료 시그널 처리
   process.on('SIGTERM', () => {
-    log('Received SIGTERM signal');
+    if (process.env.NODE_ENV === 'development') {
+      log('Received SIGTERM signal');
+    }
     process.exit(0);
   });
 
   process.on('SIGINT', () => {
-    log('Received SIGINT signal');
+    if (process.env.NODE_ENV === 'development') {
+      log('Received SIGINT signal');
+    }
     process.exit(0);
   });
 
   // 예기치 않은 에러 처리
   process.on('uncaughtException', (error) => {
-    log('Uncaught Exception:', error);
+    if (process.env.NODE_ENV === 'development') {
+      log('Uncaught Exception:', error);
+    }
     process.exit(1);
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    log('Unhandled Rejection at:', promise, 'reason:', reason);
+    if (process.env.NODE_ENV === 'development') {
+      log('Unhandled Rejection at:', promise, 'reason:', reason);
+    }
     process.exit(1);
   });
 
   // stdio 스트림 에러 처리
   process.stdin.on('error', (error) => {
-    log('stdin error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      log('stdin error:', error);
+    }
   });
 
   process.stdout.on('error', (error) => {
-    log('stdout error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      log('stdout error:', error);
+    }
   });
 
   process.stderr.on('error', (error) => {
-    log('stderr error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      log('stderr error:', error);
+    }
   });
 
   try {
-    log('Attempting to connect server to transport...');
     await server.connect(transport);
-    log('Successfully connected server to transport');
-    log('Hiworks Mail MCP Server running on stdio');
+    if (process.env.NODE_ENV === 'development') {
+      log('Hiworks Mail MCP Server running on stdio');
+    }
   } catch (error) {
-    log('Failed to start MCP server:', error);
+    if (process.env.NODE_ENV === 'development') {
+      log('Failed to start MCP server:', error);
+    }
     process.exit(1);
   }
 }

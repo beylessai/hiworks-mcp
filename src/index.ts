@@ -66,7 +66,7 @@ async function createSMTPTransporter(username: string, password: string) {
 // MCP 서버 설정
 const server = new McpServer({
   name: 'hiworks-mail-mcp',
-  version: '1.0.4',
+  version: '1.0.8',
   capabilities: {
     resources: {},
     tools: {
@@ -151,7 +151,7 @@ server.tool(
   'search_email',
   '하이웍스 이메일을 검색합니다.',
   searchEmailSchema,
-  async ({ username, password, query, limit = 10 }) => {
+  async ({ username, password, query, limit = 100 }) => {
     try {
       const client = await connectPOP3(username, password);
       

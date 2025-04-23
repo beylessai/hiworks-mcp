@@ -22,9 +22,14 @@ const config: Config = {
   }
 };
 
-// 날짜를 ISO 문자열로 변환하는 함수
+// UTC를 KST로 변환하는 함수
+function convertToKST(date: Date): Date {
+  return new Date(date.getTime() + (9 * 60 * 60 * 1000));
+}
+
+// 날짜를 ISO 문자열로 변환하는 함수 (KST 기준)
 function formatDate(date: Date): string {
-  return date.toISOString();
+  return convertToKST(date).toISOString();
 }
 
 // 로깅 함수
@@ -168,7 +173,7 @@ server.tool(
       const emails = [];
       const messagesToFetch = [];
 
-      // 최신 메일 5개 선택 (가장 높은 번호부터)
+      // 최신 메일 선택 (가장 높은 번호부터)
       const startIndex = Math.min(totalMessages, messageList[messageList.length - 1][0]);
       for (let i = startIndex; i > Math.max(1, startIndex - limit); i--) {
         if (messageList.some(([num]) => Number(num) === i)) {
@@ -183,12 +188,15 @@ server.tool(
           const messageTop = await client.TOP(msgNum, 0);
           const parsed = await simpleParser(messageTop);
           
+          // KST로 변환된 날짜 사용
+          const date = parsed.date ? formatDate(parsed.date) : formatDate(new Date());
+          
           emails.push({
             id: parsed.messageId || String(msgNum),
             subject: parsed.subject || '(제목 없음)',
             from: Array.isArray(parsed.from) ? parsed.from[0]?.text || '' : parsed.from?.text || '',
             to: Array.isArray(parsed.to) ? parsed.to[0]?.text || '' : parsed.to?.text || '',
-            date: parsed.date ? formatDate(parsed.date) : new Date().toISOString()
+            date
           });
         } catch (err) {
           if (process.env.NODE_ENV === 'development') {
@@ -196,6 +204,9 @@ server.tool(
           }
         }
       }
+
+      // KST 기준으로 정렬
+      emails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       await client.QUIT();
 
@@ -244,12 +255,15 @@ server.tool(
           const parsed = await simpleParser(rawEmail);
           
           if (parsed.messageId === messageId || String(i) === messageId) {
+            // KST로 변환된 날짜 사용
+            const date = parsed.date ? formatDate(parsed.date) : formatDate(new Date());
+            
             email = {
               id: parsed.messageId || String(i),
               subject: parsed.subject || '(제목 없음)',
               from: Array.isArray(parsed.from) ? parsed.from[0]?.text || '' : parsed.from?.text || '',
               to: Array.isArray(parsed.to) ? parsed.to[0]?.text || '' : parsed.to?.text || '',
-              date: parsed.date?.toISOString() || new Date().toISOString(),
+              date,
               content: parsed.text || '',
               html: parsed.html || undefined
             };

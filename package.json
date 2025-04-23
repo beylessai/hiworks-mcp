@@ -1,6 +1,6 @@
 {
   "name": "hiworks-mail-mcp",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "하이웍스 메일 시스템과 연동하여 메일 조회 및 전송을 할 수 있는 MCP 서버",
   "main": "build/index.js",
   "bin": {

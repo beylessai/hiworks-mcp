@@ -4,15 +4,12 @@
   "description": "하이웍스 메일 시스템과 연동하여 메일 조회 및 전송을 할 수 있는 MCP 서버",
   "main": "build/index.js",
   "type": "module",
-  "bin": {
-    "hiworks-mail-mcp": "./build/index.js"
-  },
   "files": [
     "build",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && chmod +x build/index.js",
+    "build": "tsc",
     "start": "node build/index.js",
     "dev": "tsc -w",
     "prepare": "npm run build"

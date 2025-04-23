@@ -3,12 +3,15 @@
 하이웍스 메일 시스템과 연동하여 메일 조회 및 전송을 할 수 있는 MCP(Model Context Protocol) 서버입니다.
 
 ## MCP 설정
+
+Cursor의 MCP 설정 파일(`~/.cursor/mcp.json`)에 다음 내용을 추가합니다:
+
 ```json
 {
   "mcpServers": {
     "hiworks-mail-mcp": {
       "command": "npx",
-      "args": ["-y", "@beyless/hiworks-mail-mcp@latest"],
+      "args": ["-y", "hiworks-mail-mcp@latest"],
       "env": {
         "HIWORKS_USERNAME": "your.email@beyless.com",
         "HIWORKS_PASSWORD": "your_password"

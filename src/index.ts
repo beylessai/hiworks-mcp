@@ -27,31 +27,12 @@ function formatDate(date: Date): string {
   return date.toISOString();
 }
 
-const server = new McpServer({
-  name: 'hiworks-mcp',
-  version: '1.0.0',
-  capabilities: {
-    resources: {},
-    tools: {},
-  }
-});
+// 로깅 함수
+function log(...args: any[]) {
+  console.error(new Date().toISOString(), ...args);
+}
 
-const emailSchema = {
-  username: z.string().default(process.env['HIWORKS_USERNAME'] || ''),
-  password: z.string().default(process.env['HIWORKS_PASSWORD'] || '')
-};
-
-const searchEmailSchema = {
-  ...emailSchema,
-  query: z.string().optional(),
-  limit: z.number().optional()
-};
-
-const readEmailSchema = {
-  ...emailSchema,
-  messageId: z.string()
-};
-
+// POP3 클라이언트 생성 함수
 async function connectPOP3(username: string, password: string): Promise<Pop3Command> {
   const pop3Config = {
     user: username,
@@ -61,7 +42,7 @@ async function connectPOP3(username: string, password: string): Promise<Pop3Comm
     tls: config.pop3.ssl,
     timeout: 60000
   };
-  console.error('Creating POP3 client with config:', pop3Config);
+  log('Creating POP3 client with config:', pop3Config);
   
   const client = new Pop3Command(pop3Config);
   return client;
@@ -80,6 +61,34 @@ async function createSMTPTransporter(username: string, password: string) {
   });
 }
 
+// MCP 서버 설정
+const server = new McpServer({
+  name: 'hiworks-mail-mcp',
+  version: '1.0.4',
+  capabilities: {
+    resources: {},
+    tools: {},
+  }
+});
+
+// 이메일 스키마
+const emailSchema = {
+  username: z.string().default(process.env['HIWORKS_USERNAME'] || ''),
+  password: z.string().default(process.env['HIWORKS_PASSWORD'] || '')
+};
+
+const searchEmailSchema = {
+  ...emailSchema,
+  query: z.string().optional(),
+  limit: z.number().optional()
+};
+
+const readEmailSchema = {
+  ...emailSchema,
+  messageId: z.string()
+};
+
+// 도구 등록
 server.tool(
   'read_username',
   '하이웍스 username을 읽어옵니다.',
@@ -105,37 +114,37 @@ server.tool(
   searchEmailSchema,
   async ({ username, password, query, limit = 10 }) => {
     try {
-      console.error('POP3 Config:', config.pop3);
+      log('POP3 Config:', config.pop3);
       const client = await connectPOP3(username, password);
       
       // STAT으로 메일박스 상태 확인
       const stat = await client.STAT();
-      console.error(`\nMailbox status (STAT):
+      log(`\nMailbox status (STAT):
   - STAT messages: ${stat[0]}
   - STAT total size: ${stat[1]} bytes`);
 
       // LIST로 각 메일의 크기 확인 (메시지 번호는 1부터 시작)
       const messageList = await client.LIST();
       const totalMessages = messageList.length;  // LIST 결과로 전체 메시지 수 계산
-      console.error('\nMessage list (LIST):');
-      console.error(`  - Total messages from LIST: ${totalMessages}`);
+      log('\nMessage list (LIST):');
+      log(`  - Total messages from LIST: ${totalMessages}`);
       messageList.forEach(([num, size], index) => {
         if (index < 5 || index > messageList.length - 6) {
-          console.error(`  - Message ${num}: ${size} bytes`);
+          log(`  - Message ${num}: ${size} bytes`);
         } else if (index === 5) {
-          console.error('  ...');
+          log('  ...');
         }
       });
 
       // UIDL로 메일의 고유 ID 확인
       const uidList = await client.UIDL();
-      console.error('\nMessage UIDs (UIDL):');
-      console.error(`  - Total UIDs: ${uidList.length}`);
+      log('\nMessage UIDs (UIDL):');
+      log(`  - Total UIDs: ${uidList.length}`);
       uidList.forEach(([num, uid], index) => {
         if (index < 5 || index > uidList.length - 6) {
-          console.error(`  - Message ${num}: ${uid}`);
+          log(`  - Message ${num}: ${uid}`);
         } else if (index === 5) {
-          console.error('  ...');
+          log('  ...');
         }
       });
 
@@ -150,12 +159,12 @@ server.tool(
         }
       }
 
-      console.error('\nFetching messages:', messagesToFetch.join(', '));
+      log('\nFetching messages:', messagesToFetch.join(', '));
 
       // 선택된 메일들의 정보 가져오기
       for (const msgNum of messagesToFetch) {
         try {
-          console.error(`\nProcessing message ${msgNum}:`);
+          log(`\nProcessing message ${msgNum}:`);
           // 먼저 TOP으로 헤더만 가져오기
           const messageTop = await client.TOP(msgNum, 0);
           const parsed = await simpleParser(messageTop);
@@ -163,7 +172,7 @@ server.tool(
           // 메시지 정보 로깅
           const uid = uidList.find(([num]) => Number(num) === msgNum)?.[1] || '';
           const size = messageList.find(([num]) => Number(num) === msgNum)?.[1] || '0';
-          console.error(`  - UID: ${uid}
+          log(`  - UID: ${uid}
   - Size: ${size} bytes
   - Date: ${parsed.date}
   - Subject: ${parsed.subject}
@@ -178,7 +187,7 @@ server.tool(
             date: parsed.date ? formatDate(parsed.date) : new Date().toISOString()
           });
         } catch (err) {
-          console.error(`Error processing message ${msgNum}:`, err);
+          log(`Error processing message ${msgNum}:`, err);
         }
       }
 
@@ -241,7 +250,7 @@ server.tool(
             break;
           }
         } catch (err) {
-          console.error(`Error processing email ${i}:`, err);
+          log(`Error processing email ${i}:`, err);
           continue;
         }
       }
@@ -293,7 +302,7 @@ server.tool(
   },
   async ({ username, password, to, subject, text, html, cc, bcc, attachments }) => {
     try {
-      console.error('Creating SMTP transporter...');
+      log('Creating SMTP transporter...');
       const transporter = await createSMTPTransporter(username, password);
 
       const mailOptions = {
@@ -307,9 +316,9 @@ server.tool(
         attachments
       };
 
-      console.error('Sending email...');
+      log('Sending email...');
       const info = await transporter.sendMail(mailOptions);
-      console.error('Email sent successfully:', info.messageId);
+      log('Email sent successfully:', info.messageId);
 
       return {
         content: [
@@ -323,7 +332,7 @@ server.tool(
         ]
       };
     } catch (error: any) {
-      console.error('Error sending email:', error);
+      log('Error sending email:', error);
       return {
         content: [
           {
@@ -339,10 +348,7 @@ server.tool(
   }
 );
 
-function log(...args: any[]) {
-  console.error(new Date().toISOString(), ...args);
-}
-
+// 메인 함수
 async function main() {
   log('Starting Hiworks Mail MCP Server...');
   
@@ -351,7 +357,7 @@ async function main() {
   
   const serverConfig = {
     name: 'hiworks-mail-mcp',
-    version: '1.0.3',
+    version: '1.0.4',
     capabilities: {
       resources: {},
       tools: {},

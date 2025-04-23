@@ -1,43 +1,43 @@
 {
-  "name": "hiworks-mcp",
+  "name": "hiworks-mail-mcp",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "하이웍스 메일 시스템과 연동하여 메일 조회 및 전송을 할 수 있는 MCP 서버",
+  "main": "build/index.js",
   "type": "module",
   "bin": {
-    "hiworks-mcp": "./build/index.js"
+    "hiworks-mail-mcp": "./build/index.js"
   },
   "files": [
-    "build"
+    "build",
+    "README.md"
   ],
   "scripts": {
+    "build": "tsc && chmod +x build/index.js",
     "start": "node build/index.js",
-    "dev": "tsc --watch",
-    "build": "tsc && chmod 755 build/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc -w",
+    "prepare": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "@types/mailparser": "^3.4.5",
-    "@types/node": "^22.14.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
-  },
+  "keywords": [
+    "hiworks",
+    "email",
+    "mcp",
+    "pop3",
+    "smtp",
+    "cursor"
+  ],
+  "author": "Beyless AI <dev@beyless.com>",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
-    "@types/nodemailer": "^6.4.17",
     "mailparser": "^3.7.2",
     "node-pop3": "^0.9.1",
     "nodemailer": "^6.10.1",
     "zod": "^3.24.3"
   },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node",
-    "compilerOptions": {
-      "module": "NodeNext"
-    }
+  "devDependencies": {
+    "@types/mailparser": "^3.4.5",
+    "@types/node": "^20.11.30",
+    "@types/nodemailer": "^6.4.17",
+    "typescript": "^5.4.3"
   }
 }

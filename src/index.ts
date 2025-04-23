@@ -341,8 +341,44 @@ server.tool(
 
 async function main() {
   const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Hiworks MCP Server running on stdio");
+  const server = new McpServer({
+    name: 'hiworks-mail-mcp',
+    version: '1.0.2',
+    capabilities: {
+      resources: {},
+      tools: {},
+    }
+  });
+
+  // 프로세스 종료 시그널 처리
+  process.on('SIGTERM', () => {
+    console.error('Received SIGTERM signal');
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    console.error('Received SIGINT signal');
+    process.exit(0);
+  });
+
+  // 예기치 않은 에러 처리
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+  });
+
+  try {
+    await server.connect(transport);
+    console.error("Hiworks Mail MCP Server running on stdio");
+  } catch (error) {
+    console.error("Failed to start MCP server:", error);
+    process.exit(1);
+  }
 }
 
 main().catch((error) => {

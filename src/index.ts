@@ -67,7 +67,44 @@ const server = new McpServer({
   version: '1.0.4',
   capabilities: {
     resources: {},
-    tools: {},
+    tools: {
+      read_username: {
+        description: '하이웍스 username을 읽어옵니다.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            password: { type: 'string' }
+          },
+          required: ['username', 'password']
+        }
+      },
+      search_email: {
+        description: '하이웍스 이메일을 검색합니다.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            password: { type: 'string' },
+            query: { type: 'string' },
+            limit: { type: 'number' }
+          },
+          required: ['username', 'password']
+        }
+      },
+      read_email: {
+        description: '하이웍스 이메일을 읽어옵니다.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' },
+            password: { type: 'string' },
+            messageId: { type: 'string' }
+          },
+          required: ['username', 'password', 'messageId']
+        }
+      }
+    }
   }
 });
 
@@ -355,18 +392,6 @@ async function main() {
   const transport = new StdioServerTransport();
   log('Created StdioServerTransport');
   
-  const serverConfig = {
-    name: 'hiworks-mail-mcp',
-    version: '1.0.4',
-    capabilities: {
-      resources: {},
-      tools: {},
-    }
-  };
-  
-  const server = new McpServer(serverConfig);
-  log('Created McpServer instance with config:', serverConfig);
-
   // 프로세스 종료 시그널 처리
   process.on('SIGTERM', () => {
     log('Received SIGTERM signal');

@@ -4,7 +4,7 @@
 
 ## MCP 설정
 
-Cursor의 MCP 설정 파일(`~/.cursor/mcp.json`)에 다음 내용을 추가합니다:
+Claude Desktop이나 Cursor AI의 MCP 서버 설정에 아래와 같이 추가합니다.
 
 ```json
 {
@@ -13,7 +13,7 @@ Cursor의 MCP 설정 파일(`~/.cursor/mcp.json`)에 다음 내용을 추가합�
       "command": "npx",
       "args": ["-y", "hiworks-mail-mcp@latest"],
       "env": {
-        "HIWORKS_USERNAME": "your.email@beyless.com",
+        "HIWORKS_USERNAME": "your.email@hiworks.com",
         "HIWORKS_PASSWORD": "your_password"
       }
     }
@@ -35,4 +35,3 @@ Cursor의 MCP 설정 파일(`~/.cursor/mcp.json`)에 다음 내용을 추가합�
 
 - 계정 정보는 안전하게 관리해주세요.
 - 대량 메일 발송 시 하이웍스의 정책을 준수해주세요.
-- 메일 조회 시 서버 부하를 고려하여 적절한 limit 값을 설정해주세요. 

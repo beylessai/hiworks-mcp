@@ -2,6 +2,10 @@
 
 하이웍스 메일 시스템과 연동하여 메일 조회 및 전송을 할 수 있는 MCP(Model Context Protocol) 서버입니다.
 
+<a href="https://glama.ai/mcp/servers/@beylessai/hiworks-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@beylessai/hiworks-mcp/badge" alt="Hiworks Mail MCP server" />
+</a>
+
 ## MCP 설정
 
 Claude Desktop이나 Cursor AI의 MCP 서버 설정에 아래와 같이 추가합니다.
